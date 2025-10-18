@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bức Thư Tình Yêu (v26)</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Itim&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --envelope-color: #d9534f;
+            --flap-color: #c94e4a;
+            --bg-color: #fde3e9;
+            --letter-bg: #fffaf0;
+            --text-color: #795548; /* Nâu ấm áp */
+            --text-stroke: #5d4037;
+            --envelope-max-width: 420px;
+            
+            --line-height-val: 2.2rem; /* ~35px */
+            --para-spacing: 1rem; /* Khoảng cách đoạn */
+            --line-color: #e7d9c9; 
+        }
+
+        body {
+            background-color: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Itim', cursive;
+            overflow: hidden; 
+        }
+
+        /* --- Container Trái Tim --- */
+        .hearts-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 1px;
+            height: 1px;
+            z-index: 99999;
+            pointer-events: none;
+        }
+        .heart { 
+            position: absolute; 
+            content: '💖'; 
+            font-size: 24px; 
+            opacity: 0;
+            transform: translateY(0);
+            transition: transform 6s cubic-bezier(0.1, 0.9, 0.1, 1), 
+                        opacity 6s ease-out;
+        }
+
+        /* --- Lớp phủ Bó Hoa --- */
+        #welcome-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.5); 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+            color: white;
+            text-align: center;
+            cursor: pointer;
+            transition: opacity 1.5s ease;
+        }
+        .overlay-content { 
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        .overlay-bouquet {
+            display: block;
+            max-width: 90%;
+            max-height: 80vh;
+            object-fit: contain;
+            margin-bottom: 20px;
+            transform: none;
+        }
+        /* NÂNG CẤP: Đổi thành h3 */
+        .overlay-content h3 { 
+            font-family: 'Dancing Script', cursive;
+            font-size: 4em; /* Giảm size gốc 1 chút */
+            font-weight: 700;
+            color: white;
+            line-height: 1.2; 
+            margin: 15px 0; /* Thêm margin gốc */
+            text-shadow: 
+                3px 3px 0 var(--text-stroke),
+                -1px -1px 0 var(--text-stroke),  
+                1px -1px 0 var(--text-stroke),
+                -1px 1px 0 var(--text-stroke),
+                1px 1px 0 var(--text-stroke),
+                0 0 20px rgba(0,0,0,0.5);
+        }
+        .overlay-hint {
+            font-family: 'Itim', cursive;
+            font-size: 1.5rem;
+            font-style: italic;
+            color: #f1f1f1;
+            margin-top: 10px; /* Giảm margin top */
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+        }
+        
+        #welcome-overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        /* --- Vỏ bọc phong bì --- */
+        .envelope-wrapper {
+            position: relative;
+            cursor: pointer;
+            perspective: 1500px;
+            max-width: var(--envelope-max-width);
+            width: 90vw;
+            aspect-ratio: 420 / 290; 
+            margin-top: 50px;
+            opacity: 0;
+            transition: opacity 1s ease 1s;
+        }
+        .envelope-wrapper.visible {
+            opacity: 1;
+        }
+        
+        .envelope {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: var(--envelope-color); border-radius: 10px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            transition: all 0.7s ease; z-index: 2;
+        }
+        .flap {
+            position: absolute; top: 0; left: 0; width: 100%; height: 50.5%;
+            background-color: var(--flap-color);
+            clip-path: polygon(0 0, 100% 0, 50% 100%);
+            transform-origin: top; transition: transform 0.7s ease; z-index: 4; 
+        }
+        .wax-seal {
+            position: absolute; bottom: 15px; left: 50%;
+            transform: translateX(-50%); width: 45px; height: 45px;
+            background: #a12c2c; border-radius: 50%;
+            box-shadow: inset 2px 2px 4px rgba(0,0,0,0.4), 
+                        inset -2px -2px 4px rgba(255,255,250,0.3),
+                        0 0 0 3px #b53a3a;
+            display: flex; align-items: center; justify-content: center;
+            color: #d9534f; font-size: 24px; z-index: 5;
+        }
+
+
+        /* --- Lá thư (Outer Container) --- */
+        .letter {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            
+            width: 70vw; 
+            max-width: 800px; 
+            max-height: 70vh;
+            
+            background-color: var(--letter-bg);
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden; 
+            
+            z-index: 1;
+            opacity: 0;
+            transform-origin: center center; 
+            transform: translate(-50%, -50%) rotateX(90deg) scale(0.1);
+            transition: transform 1.2s cubic-bezier(0.22, 1, 0.36, 1), 
+                        opacity 0.5s ease 0.5s;
+        }
+        .letter::before, .letter::after { content: '❤️'; position: absolute; top: 15px; font-size: 20px; opacity: 0.7; z-index: 12; }
+        .letter::before { left: 20px; }
+        .letter::after { right: 20px; }
+
+
+        /* --- Lớp chứa Ảnh Trang Trí --- */
+        .letter-decoration {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 5; 
+            pointer-events: none;
+        }
+        
+        .letter-bouquet {
+            position: absolute;
+            width: 400px; 
+            height: auto;
+            bottom: -80px;
+            left: -80px;
+            transform: rotate(-45deg); 
+            opacity: 0.9;
+            transition: all 0.5s ease;
+        }
+
+        .image-container-us {
+            position: absolute;
+            width: 220px; 
+            height: auto;
+            bottom: -50px; 
+            right: -50px; 
+            transform: rotate(15deg); 
+            z-index: 6; 
+            transition: all 0.5s ease;
+        }
+        .us-image-frame {
+            position: relative;
+            background: white;
+            border: 1px solid #ddd;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            padding: 15px 15px 40px 15px; 
+            box-sizing: border-box;
+        }
+        .letter-us-img {
+            width: 100%;
+            height: auto;
+            display: block;
+            border: 3px solid white;
+        }
+        .img-caption {
+            display: block;
+            text-align: center;
+            color: var(--text-color);
+            font-family: 'Dancing Script', cursive;
+            font-size: 1.5rem; 
+            opacity: 0.9;
+            position: absolute;
+            bottom: 10px; 
+            left: 0;
+            width: 100%;
+        }
+
+
+        /* --- Nội dung chữ (có cuộn) --- */
+        .letter-content {
+            position: relative;
+            z-index: 10; 
+            width: 100%;
+            height: 100%; 
+            overflow-y: auto; 
+            
+            padding: 50px 20px 50px 20px;
+            padding-bottom: 300px; 
+            box-sizing: border-box;
+        }
+        
+        .letter-content p {
+            margin: 0;
+            margin-bottom: var(--para-spacing); 
+            line-height: var(--line-height-val); 
+            color: var(--text-color);
+            font-family: 'Itim', cursive;
+            font-size: 1.6rem; 
+            position: relative; 
+        }
+        
+        .letter-content p.lined-text::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%; 
+            background-image: linear-gradient(to bottom, 
+                                transparent 0, 
+                                transparent calc(var(--line-height-val) - 1px), 
+                                var(--line-color) calc(var(--line-height-val) - 1px), 
+                                var(--line-color) var(--line-height-val));
+            background-size: 100% var(--line-height-val);
+            background-attachment: local;
+            pointer-events: none;
+            z-index: -1; 
+        }
+        
+        .letter-content p:last-of-type { 
+            text-align: left; 
+            margin-top: 0; 
+            margin-bottom: 0;
+        }
+
+
+        /* --- Hoạt ảnh khi mở --- */
+        .envelope-wrapper.open .flap { transform: rotateX(180deg); z-index: 1; }
+        .envelope-wrapper.open .letter { 
+            transform: translate(-50%, -50%) rotateX(0deg) scale(1); 
+            opacity: 1; 
+            z-index: 10; 
+            cursor: default; 
+            overflow: visible; 
+        }
+        
+        
+        /* --- Nút bấm và Dòng chữ --- */
+        #prompt-container {
+            text-align: center; 
+            margin-top: 30px; 
+            opacity: 0;
+            transition: opacity 1s ease 1s; 
+            color: #5d4037;
+        }
+        #prompt-container.visible {
+            opacity: 1;
+        }
+        #prompt-container p { 
+            font-size: 1.1rem; 
+            font-style: italic; 
+            margin: 0 0 15px 0;
+            font-family: 'Itim', cursive; 
+        }
+        #open-letter-btn {
+            font-family: 'Itim', cursive; 
+            font-weight: bold; 
+            font-size: 1.1rem; 
+            padding: 12px 25px; border: none; border-radius: 5px;
+            background-color: var(--envelope-color); color: white;
+            cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            transition: all 0.3s ease;
+        }
+        #open-letter-btn:hover {
+            background-color: var(--flap-color); transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+        }
+
+        .shadow { position: absolute; bottom: -15px; left: 5%; width: 90%; height: 20px; background: rgba(0, 0, 0, 0.1); border-radius: 50%; filter: blur(10px); z-index: 0; transition: all 0.5s ease; }
+
+        
+        /* --- RESPONSIVE --- */
+        
+        @media (max-width: 768px) {
+            /* NÂNG CẤP: Giảm size và margin h3 */
+            .overlay-content h3 {
+                font-size: 2.8em;
+                margin: 10px 0;
+            }
+            .overlay-hint {
+                font-size: 1.2rem;
+            }
+
+            :root {
+                --line-height-val: 2rem; 
+            }
+            .letter-content p {
+                font-size: 1.4rem; 
+            }
+
+            .letter-bouquet {
+                width: 200px;
+                bottom: -40px;
+                left: -40px;
+            }
+            .image-container-us {
+                width: 150px;
+                bottom: -30px;
+                right: -30px;
+            }
+            .us-image-frame {
+                padding: 10px 10px 30px 10px;
+            }
+            .img-caption {
+                font-size: 1.2rem;
+                bottom: 5px;
+            }
+            
+            .letter-content {
+                padding-bottom: 150px; 
+            }
+
+            .heart {
+                font-size: 18px !important; 
+            }
+        }
+
+        @media (max-width: 480px) {
+             /* NÂNG CẤP: Giảm size và margin h3 */
+            .overlay-content h3 {
+                font-size: 2.2em;
+                margin: 10px 0;
+            }
+            .overlay-hint {
+                font-size: 1rem;
+            }
+            
+            .letter-bouquet {
+                width: 150px;
+                bottom: -30px;
+                left: -30px;
+            }
+            .image-container-us {
+                width: 120px;
+                bottom: -20px;
+                right: -20px;
+            }
+            .us-image-frame {
+                padding: 8px 8px 25px 8px;
+            }
+            .img-caption {
+                font-size: 1rem;
+            }
+            .letter-content {
+                padding-bottom: 120px;
+            }
+        }
+
+    </style>
+    </head>
+<body>
+
+    <div class="hearts-container">
+        </div>
+
+    <div id="welcome-overlay">
+        <div class="overlay-content">
+            <img src="camtucau.png" alt="Bó hoa cẩm tú cầu" class="overlay-bouquet">
+            <h3>Tặng em bé đóa hoa nèeee</h3>
+            <p class="overlay-hint">Nhấn để nhận hoa</p>
+        </div>
+    </div>
+
+    <audio id="background-music" src="forever.mp3" loop preload="auto"></audio>
+
+    <div class="envelope-wrapper">
+        <div class="envelope">
+            <div class="flap">
+                <div class="wax-seal">❤️</div>
+            </div>
+        </div>
+        
+        <div class="letter">
+            
+            <div class="letter-decoration">
+                <img src="camtucau.png" class="letter-bouquet" alt="Bó hoa cẩm tú cầu">
+                
+                <div class="image-container-us">
+                    <div class="us-image-frame">
+                        <img src="us.JPEG" class="letter-us-img" alt="Ảnh kỷ niệm">
+                        <span class="img-caption">Us</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="letter-content">
+                <p class="lined-text">Anh bé chào em bé cục cưng!</p>
+                <p class="lined-text">20/10 đầu tiên đến trước khi ảnh làm người yêu ẻm mất rồi</p>
+                <p class="lined-text">Anh chúc em bé luôn dịu dàng, hiền lành khi bên anh, mong em luôn nở nụ cười và cùng anh vượt bao sóng gió cuộc đời!</p>
+                <p class="lined-text">Mình xa nhau ít lâu hoy, mong em bé luôn mạnh mẽ. Anh muốn em biết rằng: "Anh luôn ở đây nhe em".</p>
+                <p class="lined-text">Anh thương em bé Mỹ An!</p>
+            </div>
+        </div>
+        
+        <div class="shadow"></div>
+    </div>
+
+    <div id="prompt-container">
+        <p>...Đôi lời gửi đến em bé!</p>
+        <button id="open-letter-btn">Đọc thư</button>
+    </div>
+    
+    <script>
+        
+        /**
+         * HÀM TẠO TRÁI TIM (40 trái)
+         */
+        function createHearts(container, count) {
+            for (let i = 0; i < count; i++) {
+                const heart = document.createElement('span');
+                heart.classList.add('heart');
+                heart.style.left = (Math.random() * 600 - 300) + 'px';
+                heart.style.fontSize = (Math.random() * 14 + 18) + 'px';
+                heart.style.opacity = '0'; // Trạng thái ban đầu
+                container.appendChild(heart);
+            }
+        }
+        
+        /*
+         * HÀM ANIMATE TRÁI TIM (Sửa lỗi 100%)
+         */
+        function animateHearts() {
+            const hearts = document.querySelectorAll('.heart');
+            
+            hearts.forEach(heart => {
+                const delay = Math.random() * 3000; 
+                
+                setTimeout(() => {
+                    heart.style.opacity = '1';
+                }, delay);
+                
+                setTimeout(() => {
+                    const x = (Math.random() - 0.5) * 600; 
+                    const y = (Math.random() * 200 + 500); 
+                    const s = Math.random() * 1.5 + 1; 
+                    
+                    heart.style.transform = `translate(${x}px, -${y}px) scale(${s})`;
+                    heart.style.opacity = '0'; 
+                }, delay + 50); 
+            });
+        }
+
+        // Chạy khi trang tải xong
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            const envelopeWrapper = document.querySelector('.envelope-wrapper');
+            const music = document.getElementById('background-music');
+            const welcomeOverlay = document.getElementById('welcome-overlay');
+            const heartsContainer = document.querySelector('.hearts-container');
+            const promptContainer = document.getElementById('prompt-container');
+            const openLetterBtn = document.getElementById('open-letter-btn');
+
+            createHearts(heartsContainer, 40);
+
+            welcomeOverlay.addEventListener('click', function() {
+                music.load(); 
+                music.play().catch(error => {
+                    console.log("Lỗi phát nhạc: ", error);
+                });
+                
+                welcomeOverlay.classList.add('hidden');
+                
+                promptContainer.classList.add('visible');
+                envelopeWrapper.classList.add('visible');
+                
+            }, { once: true }); 
+
+            function openTheLetter() {
+                if (envelopeWrapper.classList.contains('open')) return; 
+                
+                envelopeWrapper.classList.add('open');
+                
+                animateHearts();
+                
+                promptContainer.classList.remove('visible');
+            }
+
+            openLetterBtn.addEventListener('click', openTheLetter);
+            envelopeWrapper.addEventListener('click', openTheLetter);
+        });
+    </script>
+    </body>
+</html>
